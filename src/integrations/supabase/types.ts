@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          plan: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          plan?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          plan?: string
+        }
+        Relationships: []
+      }
+      scripts: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          length: number
+          niche: string
+          platform: string
+          tone: string
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          length: number
+          niche: string
+          platform: string
+          tone: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          length?: number
+          niche?: string
+          platform?: string
+          tone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
