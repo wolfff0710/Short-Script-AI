@@ -48,7 +48,7 @@ export default function Auth() {
         <div className="bg-gradient-card border border-border rounded-2xl p-8 shadow-card">
           <h1 className="text-2xl font-bold mb-2">{mode === "signin" ? "Welcome back" : "Create your account"}</h1>
           <p className="text-sm text-muted-foreground mb-6">
-            {mode === "signin" ? "Sign in to keep generating." : "Free plan — 3 scripts/day."}
+            {mode === "signin" ? "Sign in to keep generating." : "Free forever — unlimited scripts."}
           </p>
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (

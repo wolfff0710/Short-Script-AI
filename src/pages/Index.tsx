@@ -8,7 +8,7 @@ const features = [
   { icon: Zap, title: "Scroll-stopping hooks", desc: "Engineered for the first 3 seconds." },
   { icon: Type, title: "On-screen overlays", desc: "Auto-suggested text overlays per beat." },
   { icon: Music, title: "Music mood ideas", desc: "Soundtrack vibe matched to your script." },
-  { icon: History, title: "History (Pro)", desc: "Save every script and revisit anytime." },
+  { icon: History, title: "Script History", desc: "Save every script and revisit anytime." },
   { icon: Sparkles, title: "TikTok / Reels / Shorts", desc: "Tuned to each platform's pacing." },
 ];
 
@@ -61,7 +61,7 @@ const Index = () => {
         <section className="container pb-24">
           <div className="bg-gradient-card border border-border rounded-3xl p-12 text-center shadow-card">
             <h2 className="text-3xl md:text-4xl font-bold mb-3">Ready to write your next viral script?</h2>
-            <p className="text-muted-foreground mb-6">Free to start. Upgrade when you're addicted.</p>
+            <p className="text-muted-foreground mb-6">100% free. Unlimited scripts, every feature included.</p>
             <Link to="/auth"><Button variant="hero" size="lg">Start Free</Button></Link>
           </div>
         </section>
