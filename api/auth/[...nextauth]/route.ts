@@ -1,7 +1,7 @@
-import NextAuth from "next-auth/next"; // This line was updated
-import { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
+import { AuthOptions } from "next-auth";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: AuthOptions = {
   providers: [
     {
       id: "whop",
@@ -40,5 +40,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// This is the specific fix for the "Not Callable" error
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export const GET = handler;
+export const POST = handler;
