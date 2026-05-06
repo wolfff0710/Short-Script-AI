@@ -132,32 +132,13 @@ Make each of the 5 scripts genuinely different in angle.`;
     const args = toolCall ? JSON.parse(toolCall.function.arguments) : null;
     const scripts = args?.scripts ?? [];
 
-    // Increment usage (free users)
-    if (plan !== "pro") {
-      const { data: existing } = await admin
-        .from("daily_usage")
-        .select("count")
-        .eq("user_id", user.id)
-        .eq("day", today)
-        .maybeSingle();
-      if (existing) {
-        await admin.from("daily_usage")
-          .update({ count: existing.count + 1 })
-          .eq("user_id", user.id).eq("day", today);
-      } else {
-        await admin.from("daily_usage").insert({ user_id: user.id, day: today, count: 1 });
-      }
-    }
+    // Save to history for all logged-in users
+    await admin.from("scripts").insert({
+      user_id: user.id, niche, platform, tone, length,
+      content: scripts,
+    });
 
-    // Save to history (Pro only)
-    if (plan === "pro") {
-      await admin.from("scripts").insert({
-        user_id: user.id, niche, platform, tone, length,
-        content: scripts,
-      });
-    }
-
-    return new Response(JSON.stringify({ scripts, plan }), {
+    return new Response(JSON.stringify({ scripts }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
