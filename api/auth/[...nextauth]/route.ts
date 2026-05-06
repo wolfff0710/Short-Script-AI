@@ -1,6 +1,7 @@
-import NextAuth from "next-auth";
+import NextAuth from "next-auth/next"; // This line was updated
+import { NextAuthOptions } from "next-auth";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     {
       id: "whop",
@@ -12,7 +13,6 @@ export const authOptions = {
       },
       token: "https://data.whop.com/api/v5/oauth/token",
       userinfo: "https://data.whop.com/api/v5/me",
-      // These MUST match the names you put in Vercel exactly
       clientId: process.env.WHOP_CLIENT_ID,
       clientSecret: process.env.WHOP_CLIENT_SECRET,
       profile(profile: any) {
@@ -33,7 +33,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }: any) {
-      session.accessToken = token.accessToken;
+      (session as any).accessToken = token.accessToken;
       return session;
     },
   },
