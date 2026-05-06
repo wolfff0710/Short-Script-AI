@@ -46,30 +46,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Plan + usage check
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("plan")
-      .eq("id", user.id)
-      .maybeSingle();
-    const plan = profile?.plan ?? "free";
-    const today = new Date().toISOString().slice(0, 10);
-
-    if (plan !== "pro") {
-      const { data: usage } = await admin
-        .from("daily_usage")
-        .select("count")
-        .eq("user_id", user.id)
-        .eq("day", today)
-        .maybeSingle();
-      if ((usage?.count ?? 0) >= 3) {
-        return new Response(
-          JSON.stringify({ error: "Daily free limit reached. Upgrade to Pro for unlimited scripts." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
 
