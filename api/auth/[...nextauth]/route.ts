@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { AuthOptions } from "next-auth";
 
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
   providers: [
     {
       id: "whop",
@@ -13,8 +13,8 @@ export const authOptions: AuthOptions = {
       },
       token: "https://data.whop.com/api/v5/oauth/token",
       userinfo: "https://data.whop.com/api/v5/me",
-      clientId: process.env.WHOP_CLIENT_ID || "",
-      clientSecret: process.env.WHOP_CLIENT_SECRET || "",
+      clientId: process.env.WHOP_CLIENT_ID,
+      clientSecret: process.env.WHOP_CLIENT_SECRET,
       profile(profile: any) {
         return {
           id: profile.id,
@@ -28,5 +28,6 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// THE FINAL FIX: 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
