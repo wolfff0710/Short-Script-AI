@@ -8,7 +8,7 @@ const features = [
   { icon: Zap, title: "Scroll-stopping hooks", desc: "Engineered for the first 3 seconds." },
   { icon: Type, title: "On-screen overlays", desc: "Auto-suggested text overlays per beat." },
   { icon: Music, title: "Music mood ideas", desc: "Soundtrack vibe matched to your script." },
-  { icon: History, title: "History (Pro)", desc: "Save every script and revisit anytime." },
+  { icon: History, title: "Script History", desc: "Save every script and revisit anytime." },
   { icon: Sparkles, title: "TikTok / Reels / Shorts", desc: "Tuned to each platform's pacing." },
 ];
 
