@@ -34,7 +34,6 @@ const Index = () => {
               <Link to="/auth"><Button variant="hero" size="lg">Start Free →</Button></Link>
               <Link to="/pricing"><Button variant="outline" size="lg">See pricing</Button></Link>
             </div>
-            <p className="text-xs text-muted-foreground mt-6">3 free scripts/day · No credit card required</p>
           </div>
         </section>
 
