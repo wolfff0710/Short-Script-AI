@@ -7,10 +7,10 @@ import { toast } from "sonner";
 export default function Auth() {
   const [loading, setLoading] = useState(false);
 
-  const handleWhopLogin = () => {
+  const handleWhopLogin = async () => {
     setLoading(true);
     try {
-      initiateWhopLogin();
+      await initiateWhopLogin();
     } catch (err) {
       setLoading(false);
       toast.error(err instanceof Error ? err.message : "Login failed");
