@@ -17,10 +17,16 @@ const json = (body: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { code, redirect_uri } = await req.json();
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const action = body.action ?? "exchange";
+
+    if (action === "config") {
+      return json({ client_id: Deno.env.get("WHOP_CLIENT_ID") ?? null });
+    }
+
+    const { code, redirect_uri } = body;
     if (!code || !redirect_uri) return json({ error: "Missing code or redirect_uri" }, 400);
 
     const WHOP_CLIENT_ID = Deno.env.get("WHOP_CLIENT_ID");
