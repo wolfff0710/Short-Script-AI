@@ -1,21 +1,24 @@
 // Whop OAuth integration
-const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID;
-const WHOP_AUTHORIZE_URL = 'https://whop.com/oauth/authorize';
+import { supabase } from "@/integrations/supabase/client";
 
-export function getWhopAuthUrl() {
-  const redirectUri = `${window.location.origin}/api/auth/callback/whop`;
-  
-  const params = new URLSearchParams({
-    client_id: WHOP_CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: 'offline',
-  });
-  
-  return `${WHOP_AUTHORIZE_URL}?${params.toString()}`;
+const WHOP_AUTHORIZE_URL = "https://whop.com/oauth";
+
+export function getWhopRedirectUri() {
+  return `${window.location.origin}/api/auth/callback/whop`;
 }
 
-export function initiateWhopLogin() {
-  const authUrl = getWhopAuthUrl();
-  window.location.href = authUrl;
+export async function initiateWhopLogin() {
+  const { data, error } = await supabase.functions.invoke("whop-auth", {
+    body: { action: "config" },
+  });
+  if (error || !data?.client_id) {
+    throw new Error("Whop is not configured. Please contact support.");
+  }
+  const params = new URLSearchParams({
+    client_id: data.client_id,
+    redirect_uri: getWhopRedirectUri(),
+    response_type: "code",
+    scope: "openid offline_access",
+  });
+  window.location.href = `${WHOP_AUTHORIZE_URL}?${params.toString()}`;
 }

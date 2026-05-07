@@ -7,10 +7,10 @@ import { toast } from "sonner";
 export default function Auth() {
   const [loading, setLoading] = useState(false);
 
-  const handleWhopLogin = () => {
+  const handleWhopLogin = async () => {
     setLoading(true);
     try {
-      initiateWhopLogin();
+      await initiateWhopLogin();
     } catch (err) {
       setLoading(false);
       toast.error(err instanceof Error ? err.message : "Login failed");
@@ -37,7 +37,7 @@ export default function Auth() {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center mt-6">
-            Free forever — unlimited scripts.
+            Access requires an active Short Script AI purchase on Whop.
           </p>
         </div>
       </div>

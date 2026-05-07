@@ -1,72 +1,90 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getWhopRedirectUri } from "@/lib/whop";
 import { toast } from "sonner";
 
 export default function WhopCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [processing, setProcessing] = useState(true);
+  const [status, setStatus] = useState<"working" | "denied">("working");
 
   useEffect(() => {
-    const handleCallback = async () => {
+    (async () => {
       try {
-        const code = searchParams.get("code");
         const error = searchParams.get("error");
-        const errorDescription = searchParams.get("error_description");
+        const code = searchParams.get("code");
+        if (error) throw new Error(searchParams.get("error_description") || error);
+        if (!code) throw new Error("No authorization code received");
 
-        if (error) {
-          throw new Error(errorDescription || error);
-        }
-
-        if (!code) {
-          throw new Error("No authorization code received");
-        }
-
-        // Exchange code for token via backend
-        const response = await fetch("/api/auth/callback/whop", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+        const { data, error: fnErr } = await supabase.functions.invoke("whop-auth", {
+          body: { code, redirect_uri: getWhopRedirectUri() },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Token exchange failed");
+        if (fnErr) {
+          // Try to read structured error from edge function
+          const ctx: any = (fnErr as any).context;
+          let body: any = null;
+          try { body = await ctx?.json?.(); } catch {}
+          if (body?.error === "no_access") {
+            setStatus("denied");
+            return;
+          }
+          throw new Error(body?.error || fnErr.message);
         }
 
-        const data = await response.json();
+        if (!data?.token_hash || !data?.email) throw new Error("Invalid auth response");
 
-        // Create session in Supabase with Whop user data
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.accessToken,
-          refresh_token: data.refreshToken || "",
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          type: "magiclink",
+          email: data.email,
+          token_hash: data.token_hash,
         });
+        if (vErr) throw vErr;
 
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        toast.success("Successfully signed in with Whop!");
+        toast.success("Signed in!");
         navigate("/generator");
       } catch (err) {
         console.error("Callback error:", err);
         toast.error(err instanceof Error ? err.message : "Authentication failed");
-        setProcessing(false);
         navigate("/auth");
       }
-    };
-
-    handleCallback();
+    })();
   }, [searchParams, navigate]);
+
+  if (status === "denied") {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-gradient-card border border-border rounded-2xl p-8 shadow-card text-center">
+          <h1 className="text-2xl font-bold mb-2">Purchase required</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Your Whop account doesn’t have access to <strong>Short Script AI</strong>.
+            Purchase the product on Whop, then sign in again.
+          </p>
+          <a
+            href="https://whop.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full bg-primary text-primary-foreground rounded-md px-4 py-2 font-medium hover:opacity-90"
+          >
+            Get Short Script AI on Whop
+          </a>
+          <button
+            onClick={() => (window.location.href = "/auth")}
+            className="mt-3 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">
-          {processing ? "Signing you in..." : "Redirecting..."}
-        </p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">Verifying your Whop access…</p>
       </div>
     </div>
   );
