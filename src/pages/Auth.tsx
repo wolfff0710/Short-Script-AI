@@ -37,7 +37,7 @@ export default function Auth() {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center mt-6">
-            Free forever — unlimited scripts.
+            Access requires an active Short Script AI purchase on Whop.
           </p>
         </div>
       </div>
