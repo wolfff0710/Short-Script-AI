@@ -1,4 +1,5 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth from "next-auth/next";
+import { AuthOptions } from "next-auth";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -27,6 +28,7 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// THE FIX: Instead of calling NextAuth directly, we export it like this:
-const handler = (req: any, res: any) => NextAuth(req, res, authOptions);
+// THE SPECIFIC FIX: Using .default ensures it hits the callable function
+const handler = (req: any, res: any) => (NextAuth as any).default(req, res, authOptions);
+
 export default handler;
