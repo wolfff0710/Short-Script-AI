@@ -1,7 +1,7 @@
-import NextAuth from "next-auth";
+import NextAuth from "next-auth/next";
 import { AuthOptions } from "next-auth";
 
-const authOptions: AuthOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     {
       id: "whop",
@@ -28,5 +28,7 @@ const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// This export allows Vercel to run this as a standalone function
-export default (req: any, res: any) => NextAuth(req, res, authOptions);
+// THE SPECIFIC FIX: Using .default ensures it hits the callable function
+const handler = (req: any, res: any) => (NextAuth as any).default(req, res, authOptions);
+
+export default handler;
