@@ -1,5 +1,4 @@
-import NextAuth from "next-auth";
-import { AuthOptions } from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -28,5 +27,6 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// This is the specific fix for the "not callable" error on Vite/Vercel
-export default (req: any, res: any) => NextAuth(req, res, authOptions);
+// THE FIX: Instead of calling NextAuth directly, we export it like this:
+const handler = (req: any, res: any) => NextAuth(req, res, authOptions);
+export default handler;
