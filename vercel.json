@@ -1,8 +1,0 @@
-{
-  "functions": {
-    "api/auth/callback/whop.ts": {
-      "memory": 128,
-      "maxDuration": 10
-    }
-  }
-}
