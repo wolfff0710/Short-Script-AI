@@ -14,11 +14,11 @@ export async function initiateWhopLogin() {
   if (error || !data?.client_id) {
     throw new Error("Whop is not configured. Please contact support.");
   }
-  const params = new URLSearchParams({
-    client_id: data.client_id,
-    redirect_uri: getWhopRedirectUri(),
-    response_type: "code",
-    scope: "openid offline_access",
-  });
+const params = new URLSearchParams({
+  client_id: data.client_id,
+  redirect_uri: getWhopRedirectUri(),
+  response_type: "code",
+  scope: "openid user",   // ← was "openid offline_access"
+});
   window.location.href = `${WHOP_AUTHORIZE_URL}?${params.toString()}`;
 }
