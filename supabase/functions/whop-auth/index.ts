@@ -55,21 +55,62 @@ Deno.serve(async (req) => {
     if (code_verifier) tokenPayload.code_verifier = code_verifier;
     else tokenPayload.client_secret = WHOP_CLIENT_SECRET!;
 
-    const tokenEndpoints = code_verifier
-      ? ["https://api.whop.com/oauth/token"]
-      : ["https://api.whop.com/v5/oauth/token", "https://api.whop.com/oauth/token"];
+    const tokenRequests = code_verifier
+      ? [
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(tokenPayload),
+            },
+          },
+        ]
+      : [
+          {
+            endpoint: "https://api.whop.com/v5/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(tokenPayload),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/v5/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams(tokenPayload),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: `Basic ${btoa(`${WHOP_CLIENT_ID}:${WHOP_CLIENT_SECRET}`)}`,
+              },
+              body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(tokenPayload),
+            },
+          },
+        ];
 
     let tokenRes: Response | null = null;
     let tokenData: any = null;
-    for (const endpoint of tokenEndpoints) {
-      tokenRes = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokenPayload),
-      });
+    for (const request of tokenRequests) {
+      tokenRes = await fetch(request.endpoint, request.init);
       tokenData = await tokenRes.json().catch(() => ({}));
       if (tokenRes.ok) break;
-      console.error("Whop token error:", { endpoint, tokenData });
+      console.error("Whop token error:", { endpoint: request.endpoint, tokenData });
     }
 
     if (!tokenRes.ok) {
