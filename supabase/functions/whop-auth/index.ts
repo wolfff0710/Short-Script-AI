@@ -27,11 +27,12 @@ Deno.serve(async (req) => {
     }
 
     const { code, code_verifier, redirect_uri } = body;
-    if (!code || !code_verifier || !redirect_uri) {
-      return json({ error: "Missing code, verifier, or redirect_uri" }, 400);
+    if (!code || !redirect_uri) {
+      return json({ error: "Missing code or redirect_uri" }, 400);
     }
 
     const WHOP_CLIENT_ID = Deno.env.get("WHOP_CLIENT_ID");
+    const WHOP_CLIENT_SECRET = Deno.env.get("WHOP_CLIENT_SECRET");
     const WHOP_PRODUCT_ID = Deno.env.get("WHOP_PRODUCT_ID");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -40,28 +41,112 @@ Deno.serve(async (req) => {
       return json({ error: "Server not configured" }, 500);
     }
 
+    if (!code_verifier && !WHOP_CLIENT_SECRET) {
+      return json({ error: "Server missing Whop OAuth secret" }, 500);
+    }
+
     // 1. Exchange code for Whop access token
-    const tokenRes = await fetch("https://api.whop.com/oauth/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        grant_type: "authorization_code",
-        code,
-        client_id: WHOP_CLIENT_ID,
-        code_verifier,
-        redirect_uri,
-      }),
-    });
-    const tokenData = await tokenRes.json();
+    const tokenPayload: Record<string, string> = {
+      grant_type: "authorization_code",
+      code,
+      client_id: WHOP_CLIENT_ID,
+      redirect_uri,
+    };
+    if (code_verifier) tokenPayload.code_verifier = code_verifier;
+    else tokenPayload.client_secret = WHOP_CLIENT_SECRET!;
+
+    const tokenRequests = code_verifier
+      ? [
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(tokenPayload),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...tokenPayload, client_secret: WHOP_CLIENT_SECRET! }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ ...tokenPayload, client_secret: WHOP_CLIENT_SECRET! }),
+            },
+          },
+        ]
+      : [
+          {
+            endpoint: "https://api.whop.com/v5/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                code,
+                client_id: WHOP_CLIENT_ID,
+                client_secret: WHOP_CLIENT_SECRET!,
+                redirect_uri,
+              }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/v5/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                code,
+                client_id: WHOP_CLIENT_ID,
+                client_secret: WHOP_CLIENT_SECRET!,
+                redirect_uri,
+              }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: `Basic ${btoa(`${WHOP_CLIENT_ID}:${WHOP_CLIENT_SECRET}`)}`,
+              },
+              body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(tokenPayload),
+            },
+          },
+        ];
+
+    let tokenRes: Response | null = null;
+    let tokenData: any = null;
+    for (const request of tokenRequests) {
+      tokenRes = await fetch(request.endpoint, request.init);
+      tokenData = await tokenRes.json().catch(() => ({}));
+      if (tokenRes.ok) break;
+      console.error("Whop token error:", { endpoint: request.endpoint, tokenData });
+    }
+
     if (!tokenRes.ok) {
-      console.error("Whop token error:", tokenData);
       const whopMessage = tokenData?.error_description || tokenData?.error;
       return json(
         {
           error: "whop_token_failed",
           message:
             tokenData?.error === "invalid_client"
-              ? "Whop rejected the saved app ID. Please verify WHOP_CLIENT_ID is the OAuth app ID that starts with app_."
+              ? "Whop rejected the saved app credentials. Please verify WHOP_CLIENT_ID starts with app_ and WHOP_CLIENT_SECRET is copied from the same Whop OAuth app."
               : whopMessage || "Whop token exchange failed",
         },
         400
