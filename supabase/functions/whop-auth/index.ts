@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     const accessToken = tokenData.access_token;
 
     // 2. Get Whop user
-    const meRes = await fetch("https://api.whop.com/v5/me", {
+    const meRes = await fetch("https://api.whop.com/api/v5/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const me = await meRes.json();
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     // 3. Verify membership for the product
     const memRes = await fetch(
-      "https://api.whop.com/v5/me/memberships?per=50",
+      "https://api.whop.com/api/v5/me/memberships?per=50",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const memJson = await memRes.json();
