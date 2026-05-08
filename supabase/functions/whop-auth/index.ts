@@ -32,12 +32,11 @@ Deno.serve(async (req) => {
     }
 
     const WHOP_CLIENT_ID = Deno.env.get("WHOP_CLIENT_ID");
-    const WHOP_CLIENT_SECRET = Deno.env.get("WHOP_CLIENT_SECRET");
     const WHOP_PRODUCT_ID = Deno.env.get("WHOP_PRODUCT_ID");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!WHOP_CLIENT_ID || !WHOP_CLIENT_SECRET || !WHOP_PRODUCT_ID) {
+    if (!WHOP_CLIENT_ID || !WHOP_PRODUCT_ID) {
       return json({ error: "Server not configured" }, 500);
     }
 
