@@ -72,7 +72,12 @@ Deno.serve(async (req) => {
             init: {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(tokenPayload),
+              body: JSON.stringify({
+                code,
+                client_id: WHOP_CLIENT_ID,
+                client_secret: WHOP_CLIENT_SECRET!,
+                redirect_uri,
+              }),
             },
           },
           {
@@ -80,7 +85,12 @@ Deno.serve(async (req) => {
             init: {
               method: "POST",
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
-              body: new URLSearchParams(tokenPayload),
+              body: new URLSearchParams({
+                code,
+                client_id: WHOP_CLIENT_ID,
+                client_secret: WHOP_CLIENT_SECRET!,
+                redirect_uri,
+              }),
             },
           },
           {
