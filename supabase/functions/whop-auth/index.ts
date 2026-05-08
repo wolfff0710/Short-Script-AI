@@ -26,40 +26,51 @@ Deno.serve(async (req) => {
       return json({ client_id: Deno.env.get("WHOP_CLIENT_ID") ?? null });
     }
 
-    const { code, redirect_uri } = body;
-    if (!code || !redirect_uri) return json({ error: "Missing code or redirect_uri" }, 400);
+    const { code, code_verifier, redirect_uri } = body;
+    if (!code || !code_verifier || !redirect_uri) {
+      return json({ error: "Missing code, verifier, or redirect_uri" }, 400);
+    }
 
     const WHOP_CLIENT_ID = Deno.env.get("WHOP_CLIENT_ID");
-    const WHOP_CLIENT_SECRET = Deno.env.get("WHOP_CLIENT_SECRET");
     const WHOP_PRODUCT_ID = Deno.env.get("WHOP_PRODUCT_ID");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!WHOP_CLIENT_ID || !WHOP_CLIENT_SECRET || !WHOP_PRODUCT_ID) {
+    if (!WHOP_CLIENT_ID || !WHOP_PRODUCT_ID) {
       return json({ error: "Server not configured" }, 500);
     }
 
     // 1. Exchange code for Whop access token
-    const tokenRes = await fetch("https://api.whop.com/v5/oauth/token", {
+    const tokenRes = await fetch("https://api.whop.com/oauth/token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "authorization_code",
         code,
         client_id: WHOP_CLIENT_ID,
-        client_secret: WHOP_CLIENT_SECRET,
+        code_verifier,
         redirect_uri,
       }),
     });
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) {
       console.error("Whop token error:", tokenData);
-      return json({ error: "whop_token_failed", detail: tokenData }, 400);
+      const whopMessage = tokenData?.error_description || tokenData?.error;
+      return json(
+        {
+          error: "whop_token_failed",
+          message:
+            tokenData?.error === "invalid_client"
+              ? "Whop rejected the saved app ID. Please verify WHOP_CLIENT_ID is the OAuth app ID that starts with app_."
+              : whopMessage || "Whop token exchange failed",
+        },
+        400
+      );
     }
     const accessToken = tokenData.access_token;
 
     // 2. Get Whop user
-    const meRes = await fetch("https://api.whop.com/v5/me", {
+    const meRes = await fetch("https://api.whop.com/api/v5/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const me = await meRes.json();
@@ -73,7 +84,7 @@ Deno.serve(async (req) => {
 
     // 3. Verify membership for the product
     const memRes = await fetch(
-      "https://api.whop.com/v5/me/memberships?per=50",
+      "https://api.whop.com/api/v5/me/memberships?per=50",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const memJson = await memRes.json();
