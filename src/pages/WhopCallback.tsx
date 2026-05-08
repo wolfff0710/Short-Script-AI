@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getWhopRedirectUri } from "@/lib/whop";
+import { consumeWhopOAuthState, getWhopRedirectUri } from "@/lib/whop";
 import { toast } from "sonner";
 
 export default function WhopCallback() {
@@ -14,11 +14,13 @@ export default function WhopCallback() {
       try {
         const error = searchParams.get("error");
         const code = searchParams.get("code");
+        const state = searchParams.get("state");
         if (error) throw new Error(searchParams.get("error_description") || error);
         if (!code) throw new Error("No authorization code received");
+        const codeVerifier = consumeWhopOAuthState(state);
 
         const { data, error: fnErr } = await supabase.functions.invoke("whop-auth", {
-          body: { code, redirect_uri: getWhopRedirectUri() },
+          body: { code, code_verifier: codeVerifier, redirect_uri: getWhopRedirectUri() },
         });
 
         if (fnErr) {
@@ -30,7 +32,7 @@ export default function WhopCallback() {
             setStatus("denied");
             return;
           }
-          throw new Error(body?.error || fnErr.message);
+          throw new Error(body?.message || body?.error || fnErr.message);
         }
 
         if (!data?.token_hash || !data?.email) throw new Error("Invalid auth response");
