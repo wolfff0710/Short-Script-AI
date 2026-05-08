@@ -65,6 +65,22 @@ Deno.serve(async (req) => {
               body: JSON.stringify(tokenPayload),
             },
           },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...tokenPayload, client_secret: WHOP_CLIENT_SECRET! }),
+            },
+          },
+          {
+            endpoint: "https://api.whop.com/oauth/token",
+            init: {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ ...tokenPayload, client_secret: WHOP_CLIENT_SECRET! }),
+            },
+          },
         ]
       : [
           {
@@ -130,7 +146,7 @@ Deno.serve(async (req) => {
           error: "whop_token_failed",
           message:
             tokenData?.error === "invalid_client"
-              ? "Whop rejected the saved app ID. Please verify WHOP_CLIENT_ID is the OAuth app ID that starts with app_."
+              ? "Whop rejected the saved app credentials. Please verify WHOP_CLIENT_ID starts with app_ and WHOP_CLIENT_SECRET is copied from the same Whop OAuth app."
               : whopMessage || "Whop token exchange failed",
         },
         400
